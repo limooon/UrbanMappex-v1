@@ -1,0 +1,606 @@
+{% extends "Base/index.html" %}
+
+{% block title %}
+  Home
+{% endblock %}
+
+{% block content %}
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+    }
+
+    header {
+        background-color: #001f3f;
+        color: #fff;
+        text-align: center;
+        padding: 9px;
+    }
+
+    header h2 {
+        color: white;
+        font-size: 24px;
+        margin: 0;
+        transition: transform 0.3s ease;
+    }
+
+    header h2:hover {
+        transform: rotateY(360deg);
+    }
+
+    .card {
+        background-color: #fff;
+        padding: 20px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        transition: box-shadow 0.3s ease;
+        margin-bottom: 20px;
+        height: 230px;
+        text-decoration: none;
+    }
+
+    .card:first-child {
+        flex: 2;
+        margin: 0 5px;
+    }
+
+    .card:last-child {
+        flex: 1;
+        margin: 0 5px;
+    }
+
+    .card:hover {
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+    }
+
+    .additional-card {
+        background-color: #fff;
+        padding: 20px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        transition: box-shadow 0.3s ease;
+        margin: 0 5px;
+        height: 400px;
+        flex: 3;
+    }
+
+    .additional-card:hover {
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+    }
+    .card-container {
+        display: flex;
+        justify-content: center;
+        margin: 20px;
+      }
+    
+      @media only screen and (max-width: 600px) {
+        .card-container {
+          flex-direction: column;
+          align-items: center;
+          padding: 0 4px;
+        }
+    
+        .card,
+        .additional-card {
+          width: 100%;
+          margin: 4px 0;
+        }
+    
+        #chartCard {
+          overflow: auto;
+          max-height: 300px;
+        }
+    
+        canvas {
+          width: 100% !important;
+          max-width: 100% !important;
+          height: auto !important;
+        }
+      }
+    
+      .card h3 {
+        text-align: center;
+        margin-bottom: 10px;
+      }
+    .additional-card h3 {
+        text-align: center;
+    }
+     
+        /* Estilo para el fondo blanco y texto negro */
+    .custom-title-class,
+    .custom-content-class {
+        color: #000 !important; /* Color de texto negro */
+    }
+
+    /* Estilo para el botón de confirmación */
+    .custom-confirm-button-class {
+        background-color: #001f3f;
+        color: #fff; /* Color de texto blanco */
+       
+    }
+
+    /* Estilo para el botón de confirmación al pasar el mouse sobre él */
+    .custom-confirm-button-class:hover {
+        background-color: rgb(6, 136, 10); /* Verde claro al pasar el mouse */
+       
+    }
+
+    /* Estilo para la palomita en el botón */
+    .custom-confirm-button-class::after {
+        content: '\2713'; /* Código de la palomita ✔ */
+        margin-left: 5px;
+        font-size: 1.2em;
+    }
+    .additional-card {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        overflow: hidden; /* Evita que el contenido sobresalga de la tarjeta */
+    }
+
+    /* Añade margen a la tabla y hace que sea responsive */
+    #user-table {
+        width: 100%;
+        margin: 3px;
+        margin-top: 20px;
+    }
+    /* Estilos específicos para DataTable en modo responsive */
+    @media (max-width: 600px) {
+        #user-table {
+            margin-top: 10px;
+        }
+
+        #user-table th, #user-table td {
+            display: block;
+            width: 100%;
+            box-sizing: border-box;
+        }
+    }
+    #card-container-table, .card, .additional-card {
+        border-radius: 10px; /* Adjust the value according to your preference */
+        margin-left: 15px;
+        margin-right: 15px;
+        height: 385px;
+    }
+    @media only screen and (max-width: 600px) {
+        .card-container {
+            flex-direction: column;
+            align-items: center;
+            margin: 20px 10px; /* Adjust the margin as needed */
+        }
+    
+        .card, .additional-card {
+            width: 100%;
+            margin: 10px 0; /* Adjust the margin as needed */
+        }
+    
+        #user-table th, #user-table td {
+            display: block;
+            width: 100%;
+            box-sizing: border-box;
+        }
+    }
+    #apiSelector{
+        margin-bottom:15px;
+        text-align: center;
+    }
+    #title-api{
+        text-align: center;
+        font-size: large;
+        padding-right: 15px;
+        font-weight: 600;
+    }
+   
+.contenedor-enlaces {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.enlace {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    text-decoration: none;
+    color: #fff;
+    background-color: #007bff;
+    border-radius: 5px;
+    transition: background-color 0.3s, transform 0.3s;
+}
+
+.enlace:hover {
+    background-color: #0056b3;
+}
+
+.enlace svg {
+    margin-right: 10px;
+}
+
+.enlace p {
+    margin: 0;
+}
+
+.enlace:active {
+    transform: scale(0.95);
+}
+
+</style>
+<header>
+    <h2>UrbanMapexx</h2>
+    {% if user.is_authenticated %}
+      <p>Bienvenido, {{ user.username }}.</p>
+    {% else %}
+      <p>No has iniciado sesión.</p>
+    {% endif %}
+    <div class="contenedor-enlaces">
+        <a class="enlace" href="{% url 'logout' %}">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-escape" viewBox="0 0 16 16">
+                <path d="M8.538 1.02a.5.5 0 1 0-.076.998 6 6 0 1 1-6.445 6.444.5.5 0 0 0-.997.076A7 7 0 1 0 8.538 1.02Z"/>
+                <path d="M7.096 7.828a.5.5 0 0 0 .707-.707L2.707 2.025h2.768a.5.5 0 1 0 0-1H1.5a.5.5 0 0 0-.5.5V5.5a.5.5 0 0 0 1 0V2.732z"/>
+            </svg>
+            <p>Salir</p>
+        </a>
+        <a class="enlace" href="{% url 'cartografia' %}">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-geo-alt-fill" viewBox="0 0 16 16">
+                <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6"/>
+            </svg>
+            <p>Cartografía</p>
+        </a>
+    </div>
+</header>
+
+    <div class=" info text-center fw-bold alert alert-info" role="alert">
+        A simple info alert—check it out!
+    </div>
+
+<div id="card-container-table">
+    <div class="additional-card">
+        <select id="apiSelector" class="form-select">
+            <option value="sectores">Sectores</option>
+            <option value="predios">Predios</option>
+        </select>
+        <div class="table-responsive"> <!-- Agrega la clase table-responsive -->
+            <table class="table" id="user-table">
+                <thead class="table-head">
+                    <tr id="tableHeader"></tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<div class="card-container">
+    <div class="card" id="chartCard">
+        <h3 style="text-align: center; margin-bottom: 10px;">Ediciones por Usuario</h3>
+        <div class="overflow-auto" style="max-height: 300px; padding: 23px;">
+            <canvas id="myChart" style="width: 100%;"></canvas>
+        </div>
+    </div>
+</div>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        if ('BroadcastChannel' in window) {
+          const channel = new BroadcastChannel('sesionChannel');
+      
+          const sessionId = '{{ request.session.session_key }}';  // Ajusta esto según cómo obtienes el ID de sesión en tu aplicación
+          const usuarioActual = '{{ request.user.username }}';  // Ajusta esto según cómo obtienes el nombre de usuario en tu aplicación
+      
+          // Almacena de manera única la información para cada ventana
+          const sesionCerradaKey = `sesionCerrada-${sessionId}`;
+          const usuarioActualKey = `usuarioActual-${sessionId}`;
+          const cerrarVentanasKey = `cerrarVentanas-${sessionId}`;  // Nueva clave para indicar el cierre de ventanas
+      
+          window.addEventListener('storage', (event) => {
+            if (event.key === sesionCerradaKey && event.newValue === 'true') {
+              console.log('¡La sesión ha sido cerrada en otra instancia del navegador!');
+              
+              const usuarioEnOtraSesion = localStorage.getItem(usuarioActualKey);
+      
+              if (usuarioEnOtraSesion === usuarioActual) {
+                // Redirige a la ruta inicial del login solo si el usuario actual es el que cerró sesión en otra ventana
+                window.location.href = 'http://127.0.0.1:8000/';
+      
+                // Añade una marca para indicar el cierre de ventanas
+                localStorage.setItem(cerrarVentanasKey, 'true');
+              }
+            }
+      
+            // Si se detecta el cierre de ventanas, cierra la ventana actual
+            if (event.key === cerrarVentanasKey && event.newValue === 'true') {
+              window.close();
+            }
+          });
+      
+          function cerrarSesion() {
+            // Almacena la información de cierre de sesión y de ventanas de manera única para cada ventana
+            localStorage.setItem(sesionCerradaKey, 'true');
+            localStorage.setItem(usuarioActualKey, usuarioActual);
+            localStorage.setItem(cerrarVentanasKey, 'true');
+            
+            channel.postMessage({ tipo: 'sesionCerrada', sessionId: sessionId });
+          }
+      
+          // Llamada a la función cuando el usuario cierra sesión
+          // Puedes llamar a esta función en tu lógica de cierre de sesión
+          cerrarSesion();
+        }
+      });
+    // Data table
+    jQuery(document).ready(function ($) {
+        let apiData = [];
+        let selectedApi = 'sectores';
+    
+        // Configuración inicial de DataTables sin inicialización
+        let tabla = $('#user-table').DataTable({
+            "paging": true,
+            "stateSave": true,
+            "ordering": false,
+            "searching": true,
+            "deferRender": true,
+            "lengthMenu": [5, 10, 20, 30, 40, 50],
+            "pageLength": 5,
+            "columns": [
+                { "searchable": true },
+                { "searchable": true },
+                { "searchable": true },
+                { "searchable": true },
+                { "searchable": true },
+                { "searchable": true },
+                { "searchable": true },
+                { "searchable": true }
+            ],
+            "data": [],
+            "responsive": true,
+            "columnDefs": [
+                { "targets": [0, 1, 2, 3, 4, 5, 6, 7], "visible": true, "searchable": true }
+            ],
+            "buttons": [
+                'copy',
+                'excel',
+                'pdf',
+                'print'
+            ]
+        });
+    
+        // Evento de cambio en el menú desplegable de API
+        $('#apiSelector').change(function () {
+            selectedApi = $('#apiSelector').val();
+            cargarDatos();
+        });
+    
+        // Función para cargar datos desde la API seleccionada
+        function cargarDatos() {
+            // Muestra el div de carga
+            $('.info')// Agrega la clase de Bootstrap
+            .text('Cargando datos. Por favor, espere...')
+            .show();
+    
+            // Realiza la llamada AJAX para cargar los datos
+            $.ajax({
+                url: obtenerUrlApi(selectedApi),
+                method: 'GET',
+                success: function (data) {
+                    apiData = data.features;
+                    procesarDatos(apiData);
+    
+                    // Cierra la alerta de carga después de cargar los datos
+                    $('.info').hide();
+    
+                    // Espera 4 segundos antes de mostrar la nueva alerta
+                    setTimeout(() => {
+                        mostrarAlertaListo();
+                    }, 1000);
+                },
+                error: function (error) {
+                    console.error('Error en la llamada a la API: Revise la conexión en Geoserver, Bases de datos o Cliente-Qgis', error);
+    
+                    // Cierra la alerta de carga en caso de error
+                    $('.info').hide();
+                },
+            });
+        }
+    
+        // Resto del código...
+    
+        function mostrarAlertaListo() {
+            // Muestra la alerta con la imagen de la palomita y el mensaje 'Listo'
+            Swal.fire({
+                icon: 'success',
+                title: 'Carga Completa',
+                background: '#ffffff',
+                customClass: {
+                    title: 'clase-titulo-personalizado',
+                    image: 'clase-imagen-personalizada',
+                },
+                position: 'center',
+                grow: 'up',
+                showConfirmButton: false,
+                timer: 2000,
+            });
+        }
+    
+        function procesarDatos(features) {
+            // Limpia la tabla
+            tabla.clear().draw();
+            features.forEach(function (feature) {
+                let gid = feature.properties.gid;
+                let cv_cat_es = feature.properties.cve_cat_es;
+                let cve_cat_or = feature.properties.cve_cat_or;
+                let num_ext = feature.properties.num_ext;
+                let regimen = feature.properties.regimen;
+                let last_edite = feature.properties.last_edite;
+                let shape_leng = feature.properties.shape_leng;
+                let shape_area = feature.properties.shape_area;
+    
+                // Agrega una nueva fila a la tabla
+                if (selectedApi === 'sectores') {
+                    // Para Sectores
+                    let objectid = feature.properties.objectid;
+                    let cve_entida = feature.properties.cve_entida;
+                    let cve_region = feature.properties.cve_region;
+                    let cve_munici = feature.properties.cve_munici;
+                    let cve_zona_c = feature.properties.cve_zona_c;
+                    let cve_locali = feature.properties.cve_locali;
+                    let cve_sector = feature.properties.cve_sector;
+                    tabla.row.add([gid, objectid, cve_entida, cve_region, cve_munici, cve_zona_c, cve_locali, cve_sector]);
+                } else if (selectedApi === 'predios') {
+                    // Para Predios
+                    tabla.row.add([gid, cv_cat_es, cve_cat_or, num_ext, regimen, last_edite, shape_leng, shape_area]);
+                }
+            });
+    
+            // Dibuja la tabla después de agregar los datos
+            tabla.draw();
+    
+            // Actualiza el encabezado de la tabla
+            actualizarEncabezadoTabla();
+        }
+    
+        function actualizarEncabezadoTabla() {
+            let tableHeader = $('#tableHeader');
+            if (selectedApi === 'sectores') {
+                tableHeader.html('<th>gid</th><th>objectid</th><th>cve_entida</th><th>cve_region</th><th>cve_munici</th><th>cve_zona_c</th><th>cve_locali</th><th>cve_sector</th>');
+            } else if (selectedApi === 'predios') {
+                tableHeader.html('<th>gid</th><th>cv_cat_es</th><th>cve_cat_or</th><th>num_ext</th><th>regimen</th><th>last_edite</th><th>shape_leng</th><th>shape_area</th>');
+            }
+        }
+    
+        function obtenerUrlApi(selectedApi) {
+            if (selectedApi === 'sectores') {
+                return 'http://localhost:8989/geoserver/map/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=map%3As&maxFeatures=5000&outputFormat=application%2Fjson';
+            } else if (selectedApi === 'predios') {
+                return 'http://localhost:8989/geoserver/map/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=map%3Ap&maxFeatures=200000&outputFormat=application%2Fjson';
+            }
+            // Agrega más condiciones según sea necesario para otras APIs
+        }
+    
+        // Cargar datos inicialmente al cargar la página
+        cargarDatos();
+    });
+    
+
+    //grafico con chartjs ajustar segun la nesesidad del sistema
+    document.addEventListener("DOMContentLoaded", function () {
+        
+        let ctx = document.getElementById('myChart').getContext('2d');
+    
+        let myChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: [], // Aquí se almacenarán las etiquetas (usuarios)
+                datasets: [] // Aquí se almacenarán los conjuntos de datos para cada CVE_CAT_OR
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        stepSize: 1, // Cambiado a 1 para contar la cantidad de registros
+                        title: {
+                            display: true,
+                            text: 'Cantidad de Registros'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            
+                        }
+                    }
+                }
+            }
+        });
+    
+        // Llamada inicial para cargar los datos y actualizar el gráfico
+        cargarDatosParaGrafico(200000); // Ajusta este valor según la cantidad deseada de datos iniciales
+    
+        // Función para cargar datos desde la API y actualizar el gráfico
+        function cargarDatosParaGrafico(cantidad) {
+            // Realizar la llamada AJAX para obtener los datos
+            $.ajax({
+                url: 'http://localhost:8989/geoserver/map/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=map%3Ap&maxFeatures=' + cantidad + '&outputFormat=application%2Fjson',
+                method: 'GET',
+                success: function (data) {
+                    // Procesar los datos y actualizar el gráfico
+                    actualizarGrafico(data.features);
+                },
+                error: function (error) {
+                    console.error('Error en la llamada a la API:', error);
+                },
+            });
+        }
+    
+        // Función para actualizar el gráfico con los datos proporcionados
+        function actualizarGrafico(features) {
+            const datasets = {};
+            const usuariosEdiciones = {};
+    
+            // Recorrer los datos para crear conjuntos de datos agrupados por usuario
+            features.forEach(feature => {
+                const usuario = feature.properties.last_edite; // Asumo que last_edite contiene el usuario
+    
+                // Registrar usuario para evitar duplicados
+                usuariosEdiciones[usuario] = (usuariosEdiciones[usuario] || 0) + 1;
+            });
+    
+            // Crear un único conjunto de datos con las ediciones por usuario
+            const dataset = {
+                label: 'Registros editados',
+                data: Object.values(usuariosEdiciones),
+                backgroundColor: getRandomColor(),
+                borderColor: getRandomColor(),
+                borderWidth: 1
+            };
+    
+            // Actualizar los datos del gráfico
+            myChart.data.labels = Object.keys(usuariosEdiciones);
+            myChart.data.datasets = [dataset];
+    
+            // Actualizar el gráfico
+            myChart.update();
+        }
+    
+        // Función para generar colores aleatorios
+        function getRandomColor() {
+            const letters = '0123456789ABCDEF';
+            let color = '#';
+            for (let i = 0; i < 6; i++) {
+                color += letters[Math.floor(Math.random() * 16)];
+            }
+            return color;
+        }
+    });
+    
+    
+
+    // Obtener todas las tarjetas
+    const cards = document.querySelectorAll('.card, .additional-card');
+
+    // Agregar eventos de hover a cada tarjeta
+    cards.forEach(card => {
+        card.addEventListener('mouseenter', () => {
+            card.style.backgroundColor = '#fff';
+        });
+
+        card.addEventListener('mouseleave', () => {
+            card.style.backgroundColor = '';
+        });
+    });
+
+    // Función para hacer las tarjetas responsivas
+    const makeCardsResponsive = () => {
+        if (window.innerWidth <= 600) {
+            cards.forEach(card => {
+                card.style.width = '100%';
+            });
+        } else {
+            cards.forEach(card => {
+                card.style.width = '';
+            });
+        }
+    };
+
+    // Llamar a la función cuando se carga la página y se cambia el tamaño de la ventana
+    window.addEventListener('load', makeCardsResponsive);
+    window.addEventListener('resize', makeCardsResponsive);
+</script>
+{% endblock %}

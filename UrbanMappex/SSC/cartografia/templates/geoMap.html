@@ -1,0 +1,1455 @@
+{% extends "Base/index.html" %}
+{% block title %} Cartografia {% endblock %}
+{%block content %}
+<style>
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+  #map {
+    width: 100%;
+    height: 100%;
+  }
+  .ol-popup {
+    position: absolute;
+    background-color: white;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+    padding: 15px;
+    border-radius: 10px;
+    border: 1px solid #cccccc;
+    bottom: 12px;
+    left: -50px;
+    min-width: 320px;
+  }
+  .ol-popup:after,
+  .ol-popup:before {
+    top: 100%;
+    border: solid transparent;
+    content: " ";
+    height: 0;
+    width: 0;
+    position: absolute;
+    pointer-events: none;
+  }
+  .ol-popup:after {
+    border-top-color: white;
+    border-width: 10px;
+    left: 48px;
+    margin-left: -10px;
+  }
+
+  .ol-popup:before {
+    border-top-color: #cccccc;
+    border-width: 11px;
+    left: 48px;
+    margin-left: -11px;
+  }
+  .ol-popup-closer {
+    margin-top: -13px;
+    text-decoration: none;
+    position: absolute;
+    top: 2px;
+    right: 8px;
+  }
+  .ol-popup-closer:after {
+    content: "✖";
+  }
+  .listadoPopup {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .listadoPopup li {
+    margin-bottom: 5px;
+  }
+
+  .listadoPopup strong {
+    font-weight: bold;
+  }
+  #popup {
+    background-color: rgba(255, 255, 255, 0.8); /* Fondo blanco transparente */
+    border: 1px solid #ccc; /* Borde sutil */
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Sombra suave */
+  }
+  #popup-closer {
+    color: white; /* X de color blanco */
+    background-color: blue; /* Fondo de la X de color azul */
+    border-radius: 50%; /* Hacer la X circular */
+    padding: 2px; /* Padding para la X */
+  }
+  #titulo-header h3 {
+    text-align: center;
+    font-size: larger;
+    font-weight: 700;
+  }
+  /* Estilo para el título */
+  .title {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 5px;
+
+    color: #fff;
+  }
+  .title h5 {
+    text-align: center;
+  }
+
+  /* Estilos para el menú de navegación */
+  .nav {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #666565;
+    padding: 10px;
+  }
+
+  #titulo-header {
+    margin: 0; /* Elimina el margen predeterminado del encabezado */
+    text-align: center;
+    font-size: larger;
+    font-weight: 700;
+    color: #ffffff; /* Ajusta el color del texto según sea necesario */
+  }
+  .nav-item {
+    display: flex;
+    justify-content: right;
+    align-items: center;
+  }
+
+  .nav ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .nav li {
+    float: left;
+  }
+
+  .nav a {
+    display: block;
+    padding: 10px;
+    text-decoration: none;
+    color: #ffffff;
+  }
+
+  /* Estilos para la versión responsive */
+  @media screen and (max-width: 600px) {
+    .nav li {
+      width: 100%;
+      float: none;
+    }
+  }
+  .info {
+    margin: 0;
+  }
+  .ol-attribution {
+    bottom: 0;
+    height: 1em;
+  }
+  .ol-scale-line {
+    right: 0;
+    left: auto;
+    bottom: 2em;
+  }
+  .ol-control-title {
+    height: 2em;
+  }
+  .ol-print-compass {
+    top: 1.5em !important;
+  }
+  .btn-print {
+    margin-top: 150px;
+  }
+  .search {
+    display: inline-block;
+  }
+  .custom-bar {
+    display: flex;
+    justify-content: left;
+    margin-top: 50px;
+    flex-direction: column;
+  }
+
+  .ol-control.ol-bar {
+    margin-left: -940px;
+    margin-top: 51px;
+    min-height: 1em;
+    min-width: 1em;
+    position: fixed;
+    top: 0.5em;
+    transform: translate(-50%, 0);
+    -webkit-transform: translate(-50%, 0);
+    white-space: nowrap;
+    transition: margin-left 0.3s; /* Agregamos transición para un cambio suave */
+  }
+
+  /* Estilos para el botón de mostrar/ocultar barra de controles */
+  #toggleControlsButton {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 5px 10px;
+    cursor: pointer;
+    z-index: 1000;
+  }
+  @media (max-width: 767px) {
+    .ol-control.ol-bar {
+      margin-left: 18px; /* Ajusta este valor para controlar la posición en pantallas más pequeñas */
+      margin-top: 50px;
+      position: absolute;
+      left: 1%;
+      top: 1%;
+    }
+  }
+
+  @media (min-width: 768px) and (max-width: 1023px) {
+    .ol-control.ol-bar {
+      margin-left: 18px; /* Ajusta este valor para controlar la posición en pantallas medianas */
+      margin-top: 50px;
+      position: absolute;
+      left: 1%;
+      top: 1%;
+    }
+  }
+
+  @media (min-width: 1024px) and (max-width: 1365px) {
+    .ol-control.ol-bar {
+      margin-left: 10px;
+      margin-top: 52px;
+      position: absolute;
+      left: 1%;
+      top: 1%;
+    }
+  }
+
+  @media (min-width: 1366px) and (max-width: 1919px) {
+    .ol-control.ol-bar {
+      margin-left: 10px;
+      margin-top: 52px;
+      position: absolute;
+      left: 1%;
+      top: 1%;
+    }
+  }
+
+  @media (min-width: 1920px) {
+    .ol-control.ol-bar {
+      margin-left: 4px; /* Ajusta este valor para controlar la posición en pantallas extra grandes */
+      margin-top: 59px;
+      position: absolute;
+      left: 1%;
+      top: 0;
+    }
+  }
+
+  .ol-control button {
+    color: white;
+    height: 25px;
+    width: 25px;
+    background-color: rgb(0, 25, 41);
+    transition: none;
+  }
+  .ol-control button:hover {
+    color: white;
+    height: 25px;
+    width: 25px;
+    background-color: rgb(0, 25, 41);
+  }
+  .ol-control.ol-bar .ol-control button {
+    margin: 0px;
+  }
+  .ol-control.ol-bar .ol-control button {
+    margin-top: 4px;
+  }
+  .ol-control.ol-layerswitcher {
+    position: absolute;
+    right: 0.5em;
+    text-align: left;
+    top: 0.5em;
+    margin-top: 4px;
+    max-height: calc(100% - 10em);
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+  @media (max-width: 767px) {
+    .ol-control.ol-layerswitcher {
+      margin-top: 1px;
+    }
+  }
+  .ol-layerswitcher-image > button:after,
+  .ol-layerswitcher-image > button:before,
+  .ol-layerswitcher > button:after,
+  .ol-layerswitcher > button:before {
+    content: none;
+    position: absolute;
+    width: 18px;
+    height: 20px;
+    border-radius: 0.15em;
+    -webkit-transform: scaleY(0.7) rotate(80deg);
+    transform: scaleY(0.7) rotate(80deg);
+    background-color: transparent; /* Eliminar el color de fondo */
+    border: none; /* Eliminar el borde si lo hubiera */
+    top: 50%; /* Ajustar la posición vertical */
+    left: 50%; /* Ajustar la posición horizontal */
+    transform: translate(-50%, -50%) scaleY(0.7) rotate(50deg); /* Ajustar la posición relativa al centro */
+  }
+  .ol-layerswitcher > button::before,
+  .ol-layerswitcher > button::after {
+    content: ""; /* Código del icono "fa-layer-group" */
+    font-family: "Font Awesome 5 Free"; /* Fuente del icono */
+    font-weight: 900; /* Peso del icono */
+    font-size: 25px; /* Tamaño del icono */
+    margin-right: 5px; /* Espacio entre el icono y el texto */
+  }
+  .ol-layerswitcher-image > button,
+  .ol-layerswitcher > button {
+    background-color: #fff;
+    float: right;
+    z-index: 10;
+    position: relative;
+    font-size: 1.7em;
+  }
+  .custom-scale-control {
+    margin-bottom: 4px;
+  }
+  .custom-scale-line-control {
+    margin-bottom: 55px;
+  }
+  /* Estilos para los botones */
+  /* Estilos para los botones de medición */
+  .ol-tooltip {
+    position: relative;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 4px;
+    color: white;
+    padding: 4px 8px;
+    opacity: 0.7;
+    white-space: nowrap;
+    font-size: 12px;
+    cursor: default;
+    user-select: none;
+  }
+  .ol-tooltip-measure {
+    opacity: 1;
+    font-weight: bold;
+  }
+  .ol-tooltip-static {
+    background-color: #ffcc33;
+    color: black;
+    border: 1px solid white;
+  }
+  .ol-tooltip-measure:before,
+  .ol-tooltip-static:before {
+    border-top: 6px solid rgba(0, 0, 0, 0.5);
+    border-right: 6px solid transparent;
+    border-left: 6px solid transparent;
+    content: "";
+    position: absolute;
+    bottom: -6px;
+    margin-left: -7px;
+    left: 50%;
+  }
+  .ol-tooltip-static:before {
+    border-top-color: #ffcc33;
+  }
+  header {
+    background-color: #001f3f;
+    color: #fff;
+    text-align: center;
+    padding: 9px;
+  }
+
+  header h2 {
+    color: white;
+    font-size: 24px;
+    margin: 0;
+    transition: transform 0.3s ease;
+  }
+
+  header h2:hover {
+    transform: rotateY(360deg);
+  }
+
+  .contenedor-enlaces {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+  }
+
+  .enlace {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    text-decoration: none;
+    color: #fff;
+    background-color: #007bff;
+    border-radius: 5px;
+    transition: background-color 0.3s, transform 0.3s;
+  }
+
+  .enlace:hover {
+    background-color: #0056b3;
+  }
+
+  .enlace svg {
+    margin-right: 10px;
+  }
+
+  .enlace p {
+    margin: 0;
+  }
+
+  .enlace:active {
+    transform: scale(0.95);
+  }
+  h2 {
+    text-align: center;
+  }
+  .ol-print{
+     margin-left: 151px;
+  }
+</style>
+<header>
+  <div class="contenedor-enlaces">
+    <a class="enlace" href="{% url 'home' %}">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="16"
+        height="16"
+        fill="currentColor"
+        class="bi bi-escape"
+        viewBox="0 0 16 16"
+      >
+        <path
+          d="M8.538 1.02a.5.5 0 1 0-.076.998 6 6 0 1 1-6.445 6.444.5.5 0 0 0-.997.076A7 7 0 1 0 8.538 1.02Z"
+        />
+        <path
+          d="M7.096 7.828a.5.5 0 0 0 .707-.707L2.707 2.025h2.768a.5.5 0 1 0 0-1H1.5a.5.5 0 0 0-.5.5V5.5a.5.5 0 0 0 1 0V2.732z"
+        />
+      </svg>
+      <p>Regresar</p>
+    </a>
+    <h2>UrbanMapexx</h2>
+  </div>
+</header>
+
+<div id="map"></div>
+
+<div id="popup" class="ol-popup">
+  <div class="enlaces">
+    <a href="#" id="popup-closer" class="ol-popup-closer"></a>
+  </div>
+  <div id="popup-content"></div>
+</div>
+<button class="btn-print" type="button" title="Imprimir"></button>
+
+<script>
+
+  //configuracion de la proyecion inicial
+  proj4.defs("EPSG:32611", "+proj=utm +zone=11 +datum=WGS84 +units=m +no_defs");
+  ol.proj.proj4.register(proj4);
+
+  let projection = ol.proj.get("EPSG:32611");
+  var extent = [-1205100, 3468100, -1165300, 3510100];
+
+  //creacion de mapa y proyecion
+  var map = new ol.Map({
+    target: "map",
+    view: new ol.View({
+      center: ol.proj.fromLonLat([-116.595, 31.872]),
+      zoom: 12,
+    }),
+  });
+
+  //estylo mapa predios
+  var style = new ol.style.Style({
+    stroke: new ol.style.Stroke({
+      color: "red",
+      width: 2,
+    }),
+  });
+
+  //Capas raster
+
+  const sateliteGogle = new ol.layer.Tile({
+    source: new ol.source.XYZ({
+      url: "http://www.google.cn/maps/vt?lyrs=s@189&gl=cn&x={x}&y={y}&z={z}",
+    }),
+    title: "Google-Satelite",
+    visible: true,
+  });
+
+  const openBingMaps = new ol.layer.Tile({
+    source: new ol.source.BingMaps({
+      key: "AvOpLO1UpW4QvB4oGWCErKU912NJ_ZOPviIyPglC1plecWgDQqrQqhxagMwQsspz",
+      imagerySet: "Aerial",
+    }),
+    visible: false,
+    title: "Bing-Satelite",
+  });
+
+  const GogleMaps = new ol.layer.Tile({
+    source: new ol.source.XYZ({
+      url: "https://mt1.google.com/vt/lyrs=r&x={x}&y={y}&z={z}",
+    }),
+    visible: false,
+    title: "Google-Vial",
+  });
+
+  const esriSatelliteLayer = new ol.layer.Tile({
+    source: new ol.source.XYZ({
+      url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    }),
+    title: "EsriSatellite",
+    visible: false,
+  });
+
+  //capas de layers de tipo linea,polilineas y poligonos, diferentes formatos TileWMS,ImageWMS,Vector
+  const layerPredio = new ol.layer.Tile({
+    source: new ol.source.TileWMS({
+      url: "http://localhost:8989/geoserver/map/wms?service=WMS&version=1.1.0&request=GetMap&layers=map%3Ap&bbox=501870.4375%2C3100770.75%2C916423.5%2C3570809.5&width=677&height=768&srs=EPSG%3A32611&styles=&format=application/openlayers",
+      params: { LAYERS: "map:p", TILED: true },
+      serverType: "geoserver",
+      crossOrigin: "anonymous",
+    }),
+    visible: false,
+    title: "predios",
+  });
+
+  const layerVial = new ol.layer.Image({
+    source: new ol.source.ImageWMS({
+      url: "http://localhost:8989/geoserver/map/wms?service=WMS&version=1.1.0&request=GetMap&layers=map%3AExport_Output&bbox=510266.40625%2C3424751.25%2C620783.75%2C3568787.5&width=589&height=768&srs=EPSG%3A32611&styles=&format=application/openlayers",
+      params: { LAYERS: "map:Export_Output", TILED: false },
+      serverType: "geoserver",
+      crossOrigin: "anonymous",
+    }),
+    visible: false,
+    title: "vialidades",
+  });
+
+  const layerManzanas = new ol.layer.Vector({
+    source: new ol.source.Vector({
+      url: "http://localhost:8989/geoserver/map/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=map%3Am&maxFeatures=200000&outputFormat=application%2Fjson",
+      format: new ol.format.GeoJSON(),
+    }),
+    visible: false,
+    title: "Manzanas",
+    style: function (feature) {
+      return [
+        new ol.style.Style({
+          stroke: new ol.style.Stroke({
+            color: "#14f80c", // Color del borde en verde (#14f80c)
+            width: 2,
+          }),
+        }),
+        new ol.style.Style({
+          image: new ol.style.Circle({
+            radius: 10,
+            fill: new ol.style.Fill({
+              color: "white",
+            }),
+            stroke: new ol.style.Stroke({
+              color: "#14f80c", // Color del borde en verde (#14f80c)
+              width: 2,
+            }),
+          }),
+          text: new ol.style.Text({
+            text: feature.get("cve_manzan"), // Obtiene la propiedad "cve_manzan"
+            fill: new ol.style.Fill({
+              color: "black",
+            }),
+            stroke: new ol.style.Stroke({
+              color: "white", // Color del contorno del texto en blanco
+              width: 2,
+            }),
+            offsetY: -15, // Ajusta el desplazamiento vertical del texto
+            textAlign: "center",
+            font: "bold 18px sans-serif", 
+          }),
+        }),
+      ];
+    },
+  });
+
+  //capa de sectores, falta hacer que parpaden solo los bordes del sector y que no s eponga tranparente en medio
+  var vectorSourceSector = new ol.source.Vector({
+    format: new ol.format.GeoJSON({
+      defaultDataProjection: "EPSG:32611", // Especifica la proyección para los datos GeoJSON y en url el limite de poligonos a llamar en la api
+    }),
+    url: "http://localhost:8989/geoserver/map/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=map%3As&maxFeatures=200000&outputFormat=application%2Fjson",
+    params: { LAYERS: " map:s", TILED: true },
+  });
+
+  var vectorLayerSector = new ol.layer.Vector({
+    source: vectorSourceSector,
+    visible: true,
+    title: "GeoJson - Sector",
+    style: function (feature) {
+      var claveSector = feature.get("cve_sector"); // Obtén el valor de la propiedad 'clave_sector'
+
+      return new ol.style.Style({
+        stroke: new ol.style.Stroke({
+          color: "purple", // Color de las líneas moradas
+          width: 1.5,
+        }),
+        text: new ol.style.Text({
+          text: claveSector, // Mostrar la 'clave_sector' como etiqueta de texto
+          font: "bold 14px Arial", // Aumenta el tamaño de la fuente a 14px y establece negrita
+          fill: new ol.style.Fill({
+            color: "black", // Color del texto
+          }),
+          stroke: new ol.style.Stroke({
+            color: "white", // Color del contorno del texto
+            width: 2,
+          }),
+        }),
+      });
+    },
+  });
+
+  // Obtén la proyección de la fuente de vectores
+  vectorSourceSector.once("change", function () {
+    if (vectorSourceSector.getState() === "ready") {
+      var projection = vectorSourceSector.getProjection();
+      vectorLayerSector.set("projection", projection);
+    }
+  });
+
+
+//gejson de capa de predios de la url de geoserver , falta hacer que no se sobre pongan ancima del otro arreglar topografia !dificil!
+  const bufferRatio = 1.5;
+  var vectorSource = new ol.source.Vector({
+    format: new ol.format.GeoJSON({
+      defaultDataProjection: "EPSG:32611",
+    }),
+    loader: function (extent, resolution, projection) {
+      var zoom = map.getView().getZoom();
+      if (zoom <= 100) {
+        var url =
+          "http://localhost:8989/geoserver/map/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=map%3Ap&outputFormat=application%2Fjson";
+
+        // Aumenta el tamaño del bbox
+        var bufferedExtent = ol.extent.buffer(extent, resolution * bufferRatio);
+        url += "&bbox=" + bufferedExtent.join(",") + "," + projection.getCode();
+
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", url);
+        xhr.onload = function () {
+          if (xhr.status == 200) {
+            var datos = JSON.parse(xhr.responseText);
+            vectorSource.clear();
+            vectorSource.addFeatures(
+              vectorSource.getFormat().readFeatures(datos, {
+                featureProjection: projection,
+              })
+            );
+
+            var newZoom = map.getView().getZoom();
+            vectorLayer.setVisible(newZoom <= 200);
+          }
+        };
+        xhr.onerror = function () {
+          console.error(
+            "Error al cargar GeoJSON: ",
+            xhr.status,
+            xhr.statusText
+          );
+        };
+        xhr.send();
+      } else {
+        vectorSource.clear();
+        vectorLayer.setVisible(false);
+      }
+    },
+    strategy: ol.loadingstrategy.bbox,
+    maxZoom: 20,
+  });
+
+  var vectorLayer = new ol.layer.Vector({
+    source: vectorSource,
+    style: style, // Asegúrate de que "style" esta definido enlas primeras lineas del codigo
+    visible: false,
+    title: "GeoJson - Predios",
+    proyeccion: proyeccion,
+  });
+
+  var proyeccion;
+  vectorSource.once("change", function () {
+    if (vectorSource.getState() === "listo") {
+      proyeccion = vectorSource.getProjection();
+      vectorLayer.set("proyeccion", proyeccion);
+    }
+  });
+  // el siguiente codigo no me esta tomando el zoom en vez de eso solo se desactiva la capa al hacer cualkier zoom y no sesnciende de manera manual ajustalo
+  map.getView().on("change:resolution", function () {
+    var zoom = map.getView().getZoom();
+    vectorLayer.setVisible(zoom >= 16); // Mostrar la capa cuando el zoom sea mayor o igual a 16
+  });
+
+  map.addLayer(vectorLayer);
+
+  // Control de búsqueda predios
+  var select = new ol.interaction.Select({});
+  map.addInteraction(select);
+
+  if (vectorSource) {
+    var searchCtrl = new ol.control.SearchFeature({
+      source: vectorSource,
+      property: "cve_cat_or",
+      showList: false,
+      circleRadius: 6,
+      markerStyle: new ol.style.Style({
+        image: new ol.style.Circle({
+          radius: 6,
+          fill: new ol.style.Fill({
+            color: "rgba(0, 0, 255, 0.6)",
+          }),
+          stroke: new ol.style.Stroke({
+            color: "rgba(0, 0, 255, 1)",
+            width: 2,
+          }),
+        }),
+      }),
+    });
+
+    // Estilos a los controles del lienzo
+    searchCtrl.element.style.marginTop = "1px";
+    searchCtrl.element.style.marginLeft = "180px";
+    searchCtrl.element.style.width = "169px";
+
+    var searchInput = searchCtrl.element.querySelector(".ol-search input");
+    searchInput.classList.add("mi-clase");
+    searchInput.placeholder = "Clave Catastral";
+    searchInput.style.display = "block";
+    searchInput.style.visibility = "visible";
+    searchInput.style.opacity = "1";
+    searchInput.style.marginLeft = "26px";
+    searchInput.style.width = "140px";
+
+    var searchButton = searchCtrl.element.querySelector(".ol-search button");
+    searchButton.style.width = "25px";
+    searchButton.style.height = "25px";
+    searchButton.style.backgroundColor = "rgb(0, 25, 41)";
+
+    map.addControl(searchCtrl);
+
+    searchCtrl.on("select", function (evt) {
+      select.getFeatures().clear();
+      select.getFeatures().push(evt.search);
+      var geometry = evt.search.getGeometry();
+      var extent = geometry.getExtent();
+      var center = ol.extent.getCenter(extent);
+      var zoom = 20;
+      map.getView().fit(extent, {
+        duration: 1000,
+        padding: [50, 50, 50, 50],
+        maxZoom: zoom,
+      });
+    });
+  }
+
+  //control de busqueda para sectores , fata agragar un element html que muetre capas como p,p00,p01.p02 etc 
+  //dependiendo de la capa se beveria de poder realizar la busqueda de los datos en esa capa desde el control de busqueda por especificacion de data
+  if (vectorSourceSector) {
+    var searchCtrlSector = new ol.control.SearchFeature({
+      source: vectorSourceSector,
+      property: "cve_sector", // Reemplaza 'NOMBRE' con la propiedad en tu GeoJSON que deseas buscar
+      circleRadius: 6,
+      showList: false,
+      markerStyle: new ol.style.Style({
+        image: new ol.style.Circle({
+          radius: 6,
+          fill: new ol.style.Fill({
+            color: "rgba(0, 0, 255, 0.6)",
+          }),
+          stroke: new ol.style.Stroke({
+            color: "rgba(0, 0, 255, 1)",
+            width: 2,
+          }),
+        }),
+      }),
+    });
+
+    let searchInput = searchCtrlSector.element.querySelector(".ol-search input");
+    searchInput.placeholder = "Sector";
+    searchInput.style.display = "block";
+    searchInput.style.visibility = "visible";
+    searchInput.style.opacity = "1";
+    searchInput.style.marginLeft = "26px";
+    searchInput.style.width = "85px";
+    let searchButton = searchCtrlSector.element.querySelector(".ol-search button");
+    searchButton.style.width = "25px";
+    searchButton.style.height = "25px";
+    searchButton.style.backgroundColor = "rgb(0, 25, 41)";
+
+    map.addControl(searchCtrlSector);
+
+    var searchCtrlSectorElement = searchCtrlSector.element;
+    //searchCtrlSectorElement.style.right = '1800px'; // Ajustar la posición del lado derecho
+    searchCtrlSectorElement.style.marginTop = "0px";
+    searchCtrlSectorElement.style.marginLeft = "35px";
+    searchCtrlSectorElement.style.width = "114px"; // Eliminar la posición del lado izquierdo
+    //searchCtrlSectorElement.style.marginLeft = '28px';
+
+    searchCtrlSector.on("select", function (evt) {
+      select.getFeatures().clear();
+      select.getFeatures().push(evt.search);
+      var geometry = evt.search.getGeometry();
+      var extent = geometry.getExtent();
+      var center = ol.extent.getCenter(extent);
+      var zoom = 20; // Define el nivel de zoom deseado
+      map.getView().fit(extent, {
+        duration: 1000,
+        padding: [50, 50, 50, 50],
+        maxZoom: zoom, // Limita el zoom máximo al nivel deseado
+      });
+    });
+  }
+
+  // Crear el popup y la funcuin de obtener la data y mostrarla
+  var popupContainer = document.getElementById("popup");
+  var popupContent = document.getElementById("popup-content");
+  var popupCloser = document.getElementById("popup-closer");
+
+  popupContainer.style.backgroundColor = "rgba(255, 255, 255, 0.8)";
+  popupContainer.style.padding = "10px";
+  popupContainer.style.borderRadius = "5px";
+  popupContainer.style.border = "1px solid #ccc";
+  popupContainer.style.boxShadow = "0 2px 10px rgba(0, 0, 0, 0.1)";
+  popupContainer.style.fontFamily = "Arial, sans-serif";
+  popupContainer.style.fontSize = "14px";
+  popupContainer.style.lineHeight = "1.5";
+  popupContainer.style.width = "200px";
+
+  popupCloser.style.position = "absolute";
+  popupCloser.style.top = "8px";
+  popupCloser.style.right = "2px";
+  popupCloser.style.color = "#fff"; // X de color blanco
+  popupCloser.style.textDecoration = "none";
+  popupCloser.style.fontSize = "16px";
+  popupCloser.style.backgroundColor = "#001f3f"; // Fondo de la X de color azul oscuro
+  popupCloser.style.borderRadius = "5px"; // Hacer la X con bordes redondeados
+  popupCloser.style.padding = "2px 5px"; // Padding para la X
+
+  popupCloser.addEventListener("click", function () {
+    popupOverlay.setPosition(undefined);
+    popupCloser.blur();
+    return false;
+  });
+
+  popupContent.style.margin = "0";
+  popupContent.style.padding = "0";
+  popupContent.style.listStyleType = "none";
+  popupContent.style.color = "#333"; // Color de texto oscuro
+  popupContent.style.fontFamily = "'Roboto', sans-serif"; // Fuente más moderna
+  popupContent.style.fontSize = "16px"; // Tamaño de fuente más grande
+
+  popupContent.querySelectorAll("li").forEach(function (li) {
+    li.style.marginBottom = "4px";
+    li.style.wordBreak = "break-word";
+  });
+
+  var popupOverlay = new ol.Overlay({
+    element: popupContainer,
+    autoPan: true,
+    autoPanAnimation: {
+      duration: 250,
+    },
+  });
+
+  map.addOverlay(popupOverlay);
+
+  // data despues de hacer click stylos
+  var selectedStyle = new ol.style.Style({
+    stroke: new ol.style.Stroke({
+      color: "yellow", // Color amarillo para los bordes
+      width: 2, // Grosor de la línea
+    }),
+    fill: new ol.style.Fill({
+      color: "rgba(255, 255, 0, 0.3)", // Color amarillo transparente para el relleno
+    }),
+  });
+
+  // Almacenar referencia al elemento previamente seleccionado
+  var previousSelectedFeature = null;
+  var intervalId = null;
+
+  // Función para alternar el estilo cada 3 segundos
+  function alternateStyle() {
+    if (previousSelectedFeature) {
+      if (previousSelectedFeature.getStyle() === selectedStyle) {
+        previousSelectedFeature.setStyle(null); // Eliminar estilo del elemento anterior
+      } else {
+        previousSelectedFeature.setStyle(selectedStyle);
+      }
+    }
+  }
+
+  // Función para manejar el evento de clic en el mapa
+  map.on("singleclick", function (evt) {
+    const coordinate = evt.coordinate;
+    const viewResolution = map.getView().getResolution();
+    const url = layerPredio
+      .getSource()
+      .getFeatureInfoUrl(coordinate, viewResolution, "EPSG:3857", {
+        INFO_FORMAT: "application/json",
+      });
+
+    if (url) {
+      fetch(url)
+        .then((response) => response.json())
+        .then((html) => {
+          let features = html.features[0].properties;
+          console.log(features);
+
+          // Remover el estilo del elemento previamente seleccionado
+          if (previousSelectedFeature) {
+            previousSelectedFeature.setStyle(null);
+            clearInterval(intervalId); // Limpiar intervalo anterior
+          }
+
+          // Obtener el elemento seleccionado
+          let selectedFeature = vectorSource
+            .getFeatures()
+            .find(function (feature) {
+              return feature.get("cve_cat_or") === features.cve_cat_or;
+            });
+
+          // Aplicar el estilo inicial al elemento seleccionado
+          if (selectedFeature) {
+            selectedFeature.setStyle(selectedStyle);
+            previousSelectedFeature = selectedFeature;
+
+            // Intervalo para alternar el estilo cada 3 segundos
+            intervalId = setInterval(alternateStyle, 3000);
+          }
+          // info del popup
+          popupContent.innerHTML = `
+                    <ul class="listadoPopup">
+                      <li><strong>Clave catastral:</strong> ${features.cve_cat_or}</li>
+                      <li><strong>Clave regional:</strong> ${features.cve_cat_es}</li>
+                      <li><strong>Número ext:</strong> ${features.num_ext}</li>
+                    </ul>
+                  `;
+          popupOverlay.setPosition(coordinate);
+        });
+      /*.catch((error) => {
+            console.error(error);
+            alert("No existe información del polígono");
+          });
+          */
+    }
+  });
+
+
+  //control de capas
+  var layerSwitcher = new ol.control.LayerSwitcher({
+    reverse: true,
+    groupSelectStyle: "group",
+  });
+
+  map.addControl(layerSwitcher);
+
+  //ajuste de capas
+
+  var group1 = new ol.layer.Group({
+    title: "Layers",
+    zIndex: 2,
+  });
+
+  var group2 = new ol.layer.Group({
+    title: "Base Maps",
+    zIndex: 1,
+  });
+
+  // Crear los subgrupos dentro de los grupos principales
+  var subGroup1 = new ol.layer.Group({
+    title: "Capas",
+    index: 1,
+  });
+
+  var subGroup2 = new ol.layer.Group({
+    title: "Mapas",
+    index: 2,
+  });
+
+  // Agregar los subgrupos a los grupos principales
+  group1.getLayers().push(subGroup1);
+  group2.getLayers().push(subGroup2);
+
+  // Agregar las capas a los subgrupos correspondientes
+  subGroup1.getLayers().push(layerVial);
+  subGroup1.getLayers().push(layerManzanas);
+  subGroup1.getLayers().push(vectorLayer);
+  subGroup1.getLayers().push(vectorLayerSector);
+  //subGroup1.getLayers().push(layerPredio);
+
+  subGroup2.getLayers().push(GogleMaps);
+  subGroup2.getLayers().push(esriSatelliteLayer);
+  subGroup2.getLayers().push(openBingMaps);
+  subGroup2.getLayers().push(sateliteGogle);
+
+  // Agregar los grupos principales al Layer Switcher
+  map.addLayer(group1);
+  map.addLayer(group2);
+
+  // controles del sistema en canvas
+  var ctrl = new ol.control.Scale({});
+  map.addControl(ctrl);
+  ctrl.element.classList.add("custom-scale-control");
+
+  var scaleLineControl = new ol.control.ScaleLine();
+  scaleLineControl.element.classList.add("custom-scale-line-control");
+  map.addControl(scaleLineControl);
+
+  //control de print pantalla
+  var canvasAttributionControl = new ol.control.CanvasAttribution({
+    canvas: true,
+  });
+  canvasAttributionControl.element.style.marginTop = "50px";
+  map.addControl(canvasAttributionControl);
+
+  map.addControl(
+    new ol.control.CanvasTitle({
+      title: "clave catastral",
+      visible: false,
+      style: new ol.style.Style({
+        text: new ol.style.Text({
+          font: '20px "Lucida Grande",Verdana,Geneva,Lucida,Arial,Helvetica,sans-serif',
+        }),
+      }),
+    })
+  );
+
+  // control para imprimir en canvas
+  var printControl = new ol.control.PrintDialog({
+    // targetDialog: map.getTargetElement()
+    options: {
+      orientation: ["landscape"],
+    },
+  });
+  printControl.setSize("A4");
+  map.addControl(printControl);
+
+  // On print > hide controls and buttons
+  printControl.on(["print", "error"], function (e) {
+    // Add print-specific CSS styles
+    var printStyles = document.createElement("style");
+    printStyles.innerHTML = `
+              @media print {
+                .ol-control {
+                  display: none !important;
+                }
+                title,
+                link[rel="canonical"],
+                head {
+                  display: none !important;
+                }
+              }
+            `;
+    document.head.appendChild(printStyles);
+
+    // Adjust scale line control for printing
+    var scaleLineControl = new ol.control.ScaleLine({
+      target: null,
+      units: "metric",
+      bar: true,
+      text: true,
+      minWidth: 100,
+      maxWidth: 200,
+      className: "scale-line-print",
+    });
+    map.addControl(scaleLineControl);
+    scaleLineControl.element.style.position = "fixed";
+    scaleLineControl.element.style.bottom = "20px";
+    scaleLineControl.element.style.left = "20px";
+
+    // Adjust compass control for printing
+    var compassControl = new ol.control.Rotate({
+      autoHide: false,
+    });
+    map.addControl(compassControl);
+    compassControl.element.style.position = "fixed";
+    compassControl.element.style.top = "20px";
+    compassControl.element.style.right = "20px";
+
+    // Print success
+    if (e.image) {
+      let name = "map.jpg";
+      saveAs(e.image, name);
+    } else {
+      console.warn("No canvas to export");
+    }
+
+    // Remove print-specific CSS styles after printing
+    document.head.removeChild(printStyles);
+    map.removeControl(scaleLineControl);
+    map.removeControl(compassControl);
+  });
+
+  // Crear la barra de controles
+  const text = ol.proj.transformExtent(
+    [
+      -116.59235381601634, 31.87591696459474, -116.59235381601634,
+      31.87591696459474,
+    ],
+    "EPSG:4326",
+    "EPSG:3857"
+  );
+
+  // Amplía la extensión
+  const buffer = ol.extent.buffer(text, 10000); // Ajusta el valor según sea necesario
+
+  const source = new ol.source.Vector();
+
+  const markerLayer = new ol.layer.Vector({
+    source: source,
+  });
+  // Crear la barra de controles principal
+  const mainbar = new ol.control.Bar({ className: "custom-bar" });
+  map.addControl(mainbar);
+
+  // Agregar controles existentes a la barra de controles principal
+  mainbar.addControl(
+    new ol.control.ZoomToExtent({
+      extent: buffer,
+      className: "custom-button",
+    })
+  );
+
+  mainbar.addControl(
+    new ol.control.FullScreen({
+      className: "custom-button",
+    })
+  );
+  
+
+  // Agregar control para distancia a la barra de controles principal
+  var lengbutton = document.createElement("button");
+  lengbutton.innerHTML = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-rulers" viewBox="0 0 16 16">
+      <path d="M1 0a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h5v-1H2v-1h4v-1H4v-1h2v-1H2v-1h4V9H4V8h2V7H2V6h4V2h1v4h1V4h1v2h1V2h1v4h1V4h1v2h1V2h1v4h1V1a1 1 0 0 0-1-1z"/>
+    </svg>`;
+  lengbutton.className = "distanciabutton";
+  lengbutton.id = "lengbutton";
+
+  var lengthelement = document.createElement("div");
+  lengthelement.className = "distanciadiv";
+  lengthelement.appendChild(lengbutton);
+
+  var lengControl = new ol.control.Control({
+    element: lengthelement,
+  });
+
+  var lengflat = false;
+  lengbutton.addEventListener("click", () => {
+    lengbutton.classList.toggle("clicked");
+    lengflat = !lengflat;
+    document.getElementById("map").style.cursor = "default";
+    if (lengflat) {
+      map.removeInteraction(draw);
+      addInteraction("LineString");
+    } else {
+      map.removeInteraction(draw);
+      source.clear();
+      const elements = document.getElementsByClassName(
+        "ol-tooltip ol-tooltip-static"
+      );
+      while (elements.length > 0) elements[0].remove();
+    }
+  });
+  mainbar.addControl(lengControl);
+
+  // Agregar control para área a la barra de controles principal
+  var areabutton = document.createElement("button");
+  areabutton.innerHTML = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-geo-alt-fill" viewBox="0 0 16 16">
+      <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6"/>
+    </svg>`;
+  areabutton.className = "areaabutton";
+  areabutton.id = "areabutton";
+
+  var areaElement = document.createElement("div");
+  areaElement.className = "areadiv";
+  areaElement.appendChild(areabutton);
+
+  var areaControl = new ol.control.Control({
+    element: areaElement,
+  });
+
+  var areaflat = false;
+  areabutton.addEventListener("click", () => {
+    areabutton.classList.toggle("clicked");
+    areaflat = !areaflat;
+    document.getElementById("map").style.cursor = "default";
+    if (areaflat) {
+      map.removeInteraction(draw);
+      addInteraction("Polygon");
+    } else {
+      map.removeInteraction(draw);
+      source.clear();
+      const elements = document.getElementsByClassName(
+        "ol-tooltip ol-tooltip-static"
+      );
+      while (elements.length > 0) elements[0].remove();
+    }
+  });
+  mainbar.addControl(areaControl);
+
+  // Define la función para calcular la longitud de la línea dibujada
+  var formatLength = function (line) {
+    var length = ol.sphere.getLength(line);
+    var output;
+    if (length > 1000) {
+      output = Math.round((length / 1000) * 100) / 100 + " km";
+    } else {
+      output = Math.round(length * 100) / 100 + " m";
+    }
+    return output;
+  };
+
+// Asignar la fuente (source) creada a la interacción Draw
+var draw;
+
+function addInteraction(intType) {
+
+  draw = new ol.interaction.Draw({
+    source: source,
+    type: intType,
+    style: new ol.style.Style({
+      fill: new ol.style.Fill({
+        color: "rgba(200,200,200,0.5)",
+      }),
+      stroke: new ol.style.Stroke({
+        color: "rgba(0,0,0,0.5)",
+        lineDash: [10, 10],
+        width: 2,
+      }),
+      image: new ol.style.Circle({
+        radius: 5,
+        stroke: new ol.style.Stroke({
+          color: "rgba(0,0,0,0.7)",
+        }),
+      }),
+    }),
+  });
+  map.addInteraction(draw);
+
+  // Calcular la longitud o el área al terminar de dibujar
+  draw.on("drawend", function (event) {
+    var feature = event.feature;
+    var geometry = feature.getGeometry();
+    var type = geometry.getType();
+
+    // Remove old popups
+    const popups = document.getElementsByClassName("custom-popup");
+    while (popups.length > 0) popups[0].remove();
+
+    // Create a new popup
+    var popup = document.createElement("div");
+    popup.className = "custom-popup";
+    popup.style.position = "absolute";
+    popup.style.background = "rgba(0, 0, 0, 0.8)";
+    popup.style.color = "white";
+    popup.style.padding = "8px";
+    popup.style.borderRadius = "5px";
+    popup.style.boxShadow = "0 2px 4px rgba(0, 0, 0, 0.1)";
+    popup.style.textAlign = "center";
+
+    // Get coordinates of the last point
+    var lastCoordinate = geometry.getLastCoordinate();
+
+    // Position the popup next to the last point
+    var pixel = map.getPixelFromCoordinate(lastCoordinate);
+    popup.style.left = pixel[0] + 10 + "px";
+    popup.style.top = pixel[1] + "px";
+
+    // Show length or area information based on geometry type
+    if (type === "LineString") {
+      var length = formatLength(geometry);
+      popup.innerHTML = "Longitud: " + length;
+    } else if (type === "Polygon") {
+      var area = ol.sphere.getArea(geometry);
+      // Convertir el área a metros cuadrados
+      area = Math.round(area * 100) / 100 + " m²";
+      popup.innerHTML = "Área: " + area;
+    }
+
+    // Add paragraph element with close button (X) to the popup
+    var closeParagraph = document.createElement("p");
+    closeParagraph.style.marginBottom = "15px"; // Ajuste del margen inferior
+
+    var closeButton = document.createElement("span");
+    closeButton.innerHTML = "X";
+    closeButton.style.position = "absolute";
+    closeButton.style.bottom = "0";
+    closeButton.style.right = "5px";
+    closeButton.style.color = "#fff";
+    closeButton.style.cursor = "pointer";
+    closeButton.addEventListener("click", function () {
+      popup.remove(); // Cierra el popup al hacer clic en el botón de cierre
+    });
+
+    closeParagraph.appendChild(closeButton);
+    popup.appendChild(closeParagraph);
+
+    // Add the popup to the map element
+    document.getElementById("map").appendChild(popup);
+  });
+}
+var markPointInteraction;
+
+function addMarkPointInteraction() {
+  markPointInteraction = new ol.interaction.Pointer({
+    handleDownEvent: function (event) {
+      var coordinates = map.getEventCoordinate(event);
+
+      // Crear un ícono personalizado para representar el marcador
+      var markerIcon = document.createElement("div");
+      markerIcon.className = "custom-marker"; // Clase para el ícono personalizado, puedes personalizar según tus necesidades
+      markerIcon.style.position = "absolute";
+
+      var pixel = map.getPixelFromCoordinate(coordinates);
+      markerIcon.style.left = pixel[0] + "px";
+      markerIcon.style.top = pixel[1] + "px";
+
+      // Añadir el ícono al mapa
+      document.getElementById("map").appendChild(markerIcon);
+
+      return true;
+    },
+  });
+
+  // Añadir la interacción al mapa
+  map.addInteraction(markPointInteraction);
+}
+
+// Crear el botón de busqueda por cordenada tm y utm en proyecion 32611 11n
+var markPointButton = document.createElement("button");
+markPointButton.innerHTML = `
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-crosshair" viewBox="0 0 16 16">
+    <path d="M8.5.5a.5.5 0 0 0-1 0v.518A7.001 7.001 0 0 0 1.018 7.5H.5a.5.5 0 0 0 0 1h.518A7.001 7.001 0 0 0 7.5 14.982v.518a.5.5 0 0 0 1 0v-.518A7.001 7.001 0 0 0 14.982 8.5h.518a.5.5 0 0 0 0-1h-.518A7.001 7.001 0 0 0 8.5 1.018zm-6.48 7A6.001 6.001 0 0 1 7.5 2.02v.48a.5.5 0 0 0 1 0v-.48a6.001 6.001 0 0 1 5.48 5.48h-.48a.5.5 0 0 0 0 1h.48a6.002 6.002 0 0 1-5.48 5.48v-.48a.5.5 0 0 0-1 0v.48A6.001 6.001 0 0 1 2.02 8.5h.48a.5.5 0 0 0 0-1h-.48M8 10a2 2 0 1 0 0-4 2 2 0 0 0 0 4"/>
+  </svg>`;
+markPointButton.className = "markpointbutton";
+markPointButton.id = "markpointbutton";
+
+var controlForm = document.createElement('div');
+// HTML del formulario
+controlForm.innerHTML = `
+<form class="container mt-5">
+  <div class="position-relative p-3 mb-3" style="background-color: #f8f9fa; border-radius: 5px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);">
+    <span class="text-dark font-weight-bold" style=" position: absolute; top: 10px; right: 10px; cursor: pointer; color: black;" onclick="toggleFormVisibility();">X</span>
+
+    <div class="mb-3">
+      <label for="x" class="form-label">Eje X:</label>
+      <input type="text" class="form-control" id="x" name="x" placeholder="Cordenada X">
+    </div>
+
+    <div class="mb-3">
+      <label for="y" class="form-label">Eje Y:</label>
+      <input type="text" class="form-control" id="y" name="y" placeholder="Cordenada Y">
+    </div>
+
+    <div class="mb-3 d-flex justify-content-center">
+      <label class="form-label">Projection:</label>
+      <div class="form-check mx-2">
+        <input class="form-check-input" type="radio" id="utm" name="projection" value="UTM">
+        <label class="form-check-label" for="utm">UTM</label>
+      </div>
+      <div class="form-check mx-2">
+        <input class="form-check-input" type="radio" id="tm" name="projection" value="TM">
+        <label class="form-check-label" for="tm">TM</label>
+      </div>
+    </div>
+    <div class="d-flex justify-content-center">
+      <a href="https://epsg.io/" target="_blank" class="btn btn-success" style="width: 100px;">
+        Buscar
+        <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" fill="currentColor" class="bi bi-crosshair2" viewBox="0 0 16 16">
+          <path d="M8 0a.5.5 0 0 1 .5.5v.518A7.001 7.001 0 0 1 14.982 7.5h.518a.5.5 0 0 1 0 1h-.518A7.001 7.001 0 0 1 8.5 14.982v.518a.5.5 0 0 1-1 0v-.518A7.001 7.001 0 0 1 1.018 8.5H.5a.5.5 0 0 1 0-1h.518A7.001 7.001 0 0 1 7.5 1.018V.5A.5.5 0 0 1 8 0m-.5 2.02A6.001 6.001 0 0 0 2.02 7.5h1.005A5.002 5.002 0 0 1 7.5 3.025zm1 1.005A5.002 5.002 0 0 1 12.975 7.5h1.005A6.001 6.001 0 0 0 8.5 2.02v1.005ZM12.975 8.5A5.002 5.002 0 0 1 8.5 12.975v1.005a6.002 6.002 0 0 0 5.48-5.48h-1.005ZM7.5 12.975A5.002 5.002 0 0 1 3.025 8.5H2.02a6.001 6.001 0 0 0 5.48 5.48v-1.005ZM10 8a2 2 0 1 0-4 0 2 2 0 0 0 4 0"/>
+        </svg>
+      </a>
+    </div>
+    <div class="d-flex justify-content-center">
+      <button type="submit" class="btn btn-success" style="width: 100px;">Dirigir</button>
+    </div>
+</form>
+`;
+// Estilos del contenedor principal
+controlForm.style.display = 'none';
+controlForm.style.position = 'absolute';
+controlForm.style.top = '50%';
+controlForm.style.left = '50%';
+controlForm.style.width = '300px';
+controlForm.style.marginLeft='200px';
+controlForm.style.marginTop='106px';
+controlForm.style.transform = 'translate(-50%, -50%)';
+// Variable para controlar la visibilidad del formulario
+var isFormVisible = false;
+// Función para alternar la visibilidad del formulario
+function toggleFormVisibility() {
+  if (isFormVisible) {
+    controlForm.style.display = 'none';
+  } else {
+    controlForm.style.display = 'block';
+  }
+  isFormVisible = !isFormVisible;
+}
+
+// Mostrar/ocultar el formulario al hacer clic en el botón
+markPointButton.addEventListener('click', function() {
+  toggleFormVisibility();
+});
+
+var markPointElement = document.createElement("div");
+markPointElement.className = "markpointdiv";
+markPointElement.appendChild(markPointButton);
+markPointElement.appendChild(controlForm);
+
+var markPointControl = new ol.control.Control({
+  element: markPointElement,
+});
+
+mainbar.addControl(markPointControl);
+//funcionalidad para transformar las cordenadas dependiendo de la referencia tm o utm yque haga zoom al elemento
+controlForm.querySelector('form').addEventListener('submit', function(event) {
+  event.preventDefault();
+
+  // Obtener las coordenadas y la proyección del formulario
+  var x = parseFloat(document.getElementById('x').value);
+  var y = parseFloat(document.getElementById('y').value);
+  var projection = document.querySelector('input[name="projection"]:checked').value;
+
+  // Definir el código EPSG correcto para la proyección
+  var epsgCode;
+  if (projection === 'UTM') {
+    epsgCode = 'EPSG:32611'; // Código EPSG para UTM 11N
+  } else if (projection === 'TM') {
+    epsgCode = 'EPSG:3857'; // Reemplazar con el código EPSG correcto para tu proyección TM
+  }
+
+   //para tm en y 3750517.063674012, en x -12974115.992992232
+   //para utm en y 3529715.8830643035 , en x 542694.9843671202
+   
+  // Convertir las coordenadas a la proyección del mapa
+  var coordinates = ol.proj.transform([x, y], epsgCode, map.getView().getProjection());
+
+  // Mover el mapa a las coordenadas
+  map.getView().animate({center: coordinates, zoom: 18});
+});
+
+</script>
+
+{% endblock %}
