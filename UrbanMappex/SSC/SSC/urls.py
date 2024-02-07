@@ -57,33 +57,3 @@ urlpatterns = [
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
 ]+ static(settings.MEDIA_URL,document_root=settings.MEDIA_ROOT)
 
-'''
-    
-    #vista por defecto
-    path('', views.index,name="index"),
-    #se pueden cargar rutas con la misma vista y reutilizarlas
-    #path('accounts/',include('django.contrib.auth.urls')),
-    path('inicio/', views.index,name="inicio"),
-    path('login/', views.login,name="log"),
-    path('panel/', views.panel,name="menu"),
-    
-    # crud y listado de registros Datatables
-    path('registro/', views.registros,name="registro"),
-    path('crud/', views.crud,name="crud"),
-    path('add/', views.add, name='add'),
-    path('add/addrecord/', views.addrecord, name='addrecord'),
-    path('crud/delete/<int:id>', views.delete, name='delete'),
-    path('crud/update/<int:id>', views.update, name='update'),
-    path('crud/update/updaterecord/<int:id>', views.updaterecord, name='updaterecord'),
-    
-    path('cartografia/', views.cartografia,name="cartografia"),
-    path('integracion/', views.integracion,name="integracion"),
-    path('digitalizacion/', views.digitalizacion,name="digitalizacion"),
-    path('prueba/', views.prueba,name="pruebas"),
-    #redireciones por el nombre no fecta en los cambios de la url
-     path('prueba/<int:num>', views.prueba,name="pruebasRedirect"),
-    #con parametro en la url o parametros por defecto
-    path('contacto/', views.contacto,name="contacto"),
-    #path('nregistro/', views.crearR,name="registro"),
-    path('contacto/<str:name>', views.contacto,name="contacto"),
-    '''
