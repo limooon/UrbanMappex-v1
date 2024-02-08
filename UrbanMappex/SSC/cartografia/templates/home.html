@@ -191,38 +191,38 @@
         font-weight: 600;
     }
    
-.contenedor-enlaces {
-    display: flex;
-    gap: 10px;
-    margin-top: 20px;
-}
+    .contenedor-enlaces {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+    }
 
-.enlace {
-    display: flex;
-    align-items: center;
-    padding: 10px;
-    text-decoration: none;
-    color: #fff;
-    background-color: #007bff;
-    border-radius: 5px;
-    transition: background-color 0.3s, transform 0.3s;
-}
+    .enlace {
+        display: flex;
+        align-items: center;
+        padding: 10px;
+        text-decoration: none;
+        color: #fff;
+        background-color: #007bff;
+        border-radius: 5px;
+        transition: background-color 0.3s, transform 0.3s;
+    }
 
-.enlace:hover {
-    background-color: #0056b3;
-}
+    .enlace:hover {
+        background-color: #0056b3;
+    }
 
-.enlace svg {
-    margin-right: 10px;
-}
+    .enlace svg {
+        margin-right: 10px;
+    }
 
-.enlace p {
-    margin: 0;
-}
+    .enlace p {
+        margin: 0;
+    }
 
-.enlace:active {
-    transform: scale(0.95);
-}
+    .enlace:active {
+        transform: scale(0.95);
+    }
 
 </style>
 <header>
@@ -424,28 +424,28 @@
             tabla.clear().draw();
             features.forEach(function (feature) {
                 let gid = feature.properties.gid;
-                let cv_cat_es = feature.properties.cve_cat_es;
-                let cve_cat_or = feature.properties.cve_cat_or;
-                let num_ext = feature.properties.num_ext;
-                let regimen = feature.properties.regimen;
-                let last_edite = feature.properties.last_edite;
-                let shape_leng = feature.properties.shape_leng;
-                let shape_area = feature.properties.shape_area;
+                let cv_ = feature.properties.cv_;
+                let cve_ = feature.properties.cve_;
+                let num = feature.properties.num;
+                let re = feature.properties.re;
+                let last_e = feature.properties.last_e;
+                let shape_l = feature.properties.shape_l;
+                let shape_a = feature.properties.shape_a;
     
                 // Agrega una nueva fila a la tabla
-                if (selectedApi === 'sectores') {
-                    // Para Sectores
-                    let objectid = feature.properties.objectid;
-                    let cve_entida = feature.properties.cve_entida;
-                    let cve_region = feature.properties.cve_region;
-                    let cve_munici = feature.properties.cve_munici;
-                    let cve_zona_c = feature.properties.cve_zona_c;
-                    let cve_locali = feature.properties.cve_locali;
-                    let cve_sector = feature.properties.cve_sector;
-                    tabla.row.add([gid, objectid, cve_entida, cve_region, cve_munici, cve_zona_c, cve_locali, cve_sector]);
-                } else if (selectedApi === 'predios') {
-                    // Para Predios
-                    tabla.row.add([gid, cv_cat_es, cve_cat_or, num_ext, regimen, last_edite, shape_leng, shape_area]);
+                if (selectedApi === 'capa1') {
+                    // ajustar campos de base de datos de la capa
+                    let obj = feature.properties.obj;
+                    let cve_ = feature.properties.cve_;
+                    let cv_ = feature.properties.cv_;
+                    let cve_m = feature.properties.cve_m;
+                    let cve_z = feature.properties.cve_z;
+                    let cve_l = feature.properties.cve_l;
+                    let cve_s = feature.properties.cve_s;
+                    tabla.row.add([gid, obj, cve_, cv_, cve_m cve_z, cve_l, cve_s]);
+                } else if (selectedApi === 'capa2') {
+                    // ajustar campos de la tabla a llamar
+                    tabla.row.add([gid, cv_, cve_c, num, reg, last_e, shape_l, shape_a]);
                 }
             });
     
@@ -457,19 +457,21 @@
         }
     
         function actualizarEncabezadoTabla() {
+            //ajustar nombre de los campos de la tabla a mostrar
             let tableHeader = $('#tableHeader');
-            if (selectedApi === 'sectores') {
-                tableHeader.html('<th>gid</th><th>objectid</th><th>cve_entida</th><th>cve_region</th><th>cve_munici</th><th>cve_zona_c</th><th>cve_locali</th><th>cve_sector</th>');
-            } else if (selectedApi === 'predios') {
-                tableHeader.html('<th>gid</th><th>cv_cat_es</th><th>cve_cat_or</th><th>num_ext</th><th>regimen</th><th>last_edite</th><th>shape_leng</th><th>shape_area</th>');
+            if (selectedApi === 'capa1') {
+                tableHeader.html('<th>gid</th><th>obj</th><th>cve_</th><th>cve_r</th><th>cve_m</th><th>cve_z</th><th>cve_l</th><th>cve_s</th>');
+            } else if (selectedApi === 'capa2') {
+                tableHeader.html('<th>gid</th><th>obj</th><th>cve_</th><th>cve_r</th><th>cve_m</th><th>cve_z</th><th>cve_l</th><th>cve_s</th>');
             }
         }
     
         function obtenerUrlApi(selectedApi) {
-            if (selectedApi === 'sectores') {
-                return 'http://localhost:8989/geoserver/map/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=map%3As&maxFeatures=5000&outputFormat=application%2Fjson';
-            } else if (selectedApi === 'predios') {
-                return 'http://localhost:8989/geoserver/map/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=map%3Ap&maxFeatures=200000&outputFormat=application%2Fjson';
+            if (selectedApi === 'capa1') {
+                //url en formato json desde geoserver 
+                return 'http://localhost:maxFeatures=200000&outputFormat=application%2Fjson';
+            } else if (selectedApi === 'capa2') {
+                return 'http://localhost:maxFeatures=200000&outputFormat=application%2Fjson';
             }
             // Agrega más condiciones según sea necesario para otras APIs
         }
@@ -487,14 +489,14 @@
         let myChart = new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: [], // Aquí se almacenarán las etiquetas (usuarios)
-                datasets: [] // Aquí se almacenarán los conjuntos de datos para cada CVE_CAT_OR
+                labels: [], 
+                datasets: [] 
             },
             options: {
                 scales: {
                     y: {
                         beginAtZero: true,
-                        stepSize: 1, // Cambiado a 1 para contar la cantidad de registros
+                        stepSize: 1, 
                         title: {
                             display: true,
                             text: 'Cantidad de Registros'
@@ -515,9 +517,9 @@
     
         // Función para cargar datos desde la API y actualizar el gráfico
         function cargarDatosParaGrafico(cantidad) {
-            // Realizar la llamada AJAX para obtener los datos
+            // Realizar la llamada AJAX para obtener los datos desde el json de geoserver
             $.ajax({
-                url: 'http://localhost:8989/geoserver/map/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=map%3Ap&maxFeatures=' + cantidad + '&outputFormat=application%2Fjson',
+                url: 'http://localhost:maxFeatures=' + cantidad + '&outputFormat=application%2Fjson',
                 method: 'GET',
                 success: function (data) {
                     // Procesar los datos y actualizar el gráfico
@@ -536,7 +538,7 @@
     
             // Recorrer los datos para crear conjuntos de datos agrupados por usuario
             features.forEach(feature => {
-                const usuario = feature.properties.last_edite; // Asumo que last_edite contiene el usuario
+                const usuario = feature.properties.last_e; // Asumo que last_e contiene el usuario
     
                 // Registrar usuario para evitar duplicados
                 usuariosEdiciones[usuario] = (usuariosEdiciones[usuario] || 0) + 1;
